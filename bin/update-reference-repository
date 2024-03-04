@@ -4,20 +4,14 @@ fail() {
         exit 1
 }
 
-_get_remote() {
+_get_first_remote() {
     local remote_str=$(git remote)
     local count=0
     for name in $remote_str; do
         echo $name
-        let count=$count+1
+        return
     done
-    if [ $count -lt 1 ]; then
-        fail "ERROR: this repo has no remotes configured. (See 'git remote -v')"
-    fi
-    if [ $count -gt 1 ]; then
-        fail "ERROR: this repo has multiple remotes configured. (See 'git remote -v')"
-    fi
-    echo $remote_str
+    fail "ERROR: this repo has no remotes configured. (See 'git remote -v')"
 }
 
 minutes=0
@@ -49,7 +43,7 @@ done
 test -n "$repo_path" || fail "Usage: $0 REPO_PATH"
 test -e "$repo_path/.git" || test -e "$repo_path/refs" || fail "ERROR: $repo_path is not a git repo"
 
-remote=$(cd $repo_path && _get_remote)
+remote=$(cd $repo_path && _get_first_remote)
 
 if [ $minutes -gt 0 ]; then
     # bail if the repo has been updated in the last $minutes

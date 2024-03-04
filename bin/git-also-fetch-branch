@@ -4,20 +4,14 @@ fail() {
         exit 1
 }
 
-_get_remote() {
+_get_first_remote() {
     local remote_str=$(git remote)
     local count=0
     for name in $remote_str; do
         echo $name
-        let count=$count+1
+        return
     done
-    if [ $count -lt 1 ]; then
-        fail "ERROR: this repo has no remotes configured. (See 'git remote -v')"
-    fi
-    if [ $count -gt 1 ]; then
-        fail "ERROR: this repo has multiple remotes configured. (See 'git remote -v')"
-    fi
-    echo $remote_str
+    fail "ERROR: this repo has no remotes configured. (See 'git remote -v')"
 }
 
 branch="$1"
@@ -25,6 +19,6 @@ branch="$1"
 test -e .git || fail "Not in a git repo?"
 test -n "$branch" || fail "Usage: $0 <branch>"
 
-remote=$(_get_remote)
+remote=$(_get_first_remote)
 
 git config --add "remote.$remote.fetch" "+refs/heads/${branch}:refs/remotes/$remote/${branch}"
