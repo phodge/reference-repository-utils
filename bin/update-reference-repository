@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+fail() {
+        echo "$@" >&2
+        exit 1
+}
+
+_get_remote() {
+    local remote_str=$(git remote)
+    local count=0
+    for name in $remote_str; do
+        echo $name
+        let count=$count+1
+    done
+    if [ $count -lt 1 ]; then
+        fail "ERROR: this repo has no remotes configured. (See 'git remote -v')"
+    fi
+    if [ $count -gt 1 ]; then
+        fail "ERROR: this repo has multiple remotes configured. (See 'git remote -v')"
+    fi
+    echo $remote_str
+}
+
+minutes=0
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --older-than)
+            minutes="$2"
+            shift
+            shift
+            ;;
+        --older-than=*)
+            minutes="${1#*=}"
+            shift
+            ;;
+        -h|--help)
+            echo "Usage: $0 REPO_PATH"
+            exit 2
+            ;;
+        *)
+            test -z "$repo_path" || fail -e "ERROR: Unexpected argument '$1'\nUsage: $0 REPO_PATH"
+            repo_path="$1"
+            shift
+            test -d "$repo_path" || fail "Usage: $0 <repo-path>"
+            ;;
+    esac
+done
+
+test -n "$repo_path" || fail "Usage: $0 REPO_PATH"
+test -e "$repo_path/.git" || test -e "$repo_path/refs" || fail "ERROR: $repo_path is not a git repo"
+
+remote=$(cd $repo_path && _get_remote)
+
+if [ $minutes -gt 0 ]; then
+    # bail if the repo has been updated in the last $minutes
+    find $repo_path/{FETCH_HEAD,packed-refs,objects,.git} -mmin -$minutes -print -quit &>/dev/null
+    if [ $? = 0 ]; then
+        echo "INFO: Reference repository was updated less than $minutes minutes ago." >&2
+        echo "INFO: Path: $repo_path" >&2
+        exit 0
+    fi
+fi
+
+echo "INFO: Reference repository has not been updated in more than $minutes minutes." >&2
+echo "INFO: Path: $repo_path" >&2
+gitcmd=(git fetch --no-tags --recurse-submodules=no -v $remote)
+echo "$ ${gitcmd[@]}" >&2
+cd $repo_path && ${gitcmd[@]} || fail 'ERROR: git fetch failed'
