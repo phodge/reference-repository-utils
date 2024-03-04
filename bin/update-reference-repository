@@ -59,9 +59,10 @@ if [ $minutes -gt 0 ]; then
         echo "INFO: Path: $repo_path" >&2
         exit 0
     fi
+
+    echo "INFO: Reference repository has not been updated in more than $minutes minutes." >&2
 fi
 
-echo "INFO: Reference repository has not been updated in more than $minutes minutes." >&2
 echo "INFO: Path: $repo_path" >&2
 gitcmd=(git fetch --no-tags --recurse-submodules=no -v $remote)
 echo "$ ${gitcmd[@]}" >&2
