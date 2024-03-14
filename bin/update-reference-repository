@@ -45,9 +45,18 @@ test -e "$repo_path/.git" || test -e "$repo_path/refs" || fail "ERROR: $repo_pat
 
 remote=$(cd $repo_path && _get_first_remote)
 
+is_bare_repo() {
+    ! test -d "$1/.git"
+}
+
 if [ $minutes -gt 0 ]; then
     # bail if the repo has been updated in the last $minutes
-    find $repo_path/{FETCH_HEAD,packed-refs,objects,.git} -mmin -$minutes -print -quit &>/dev/null
+    if is_bare_repo "$repo_path"; then
+        search_path="$repo_path"
+    else
+        search_path="$repo_path/.git"
+    fi
+    find "$search_path"/{FETCH_HEAD,packed-refs,objects} -mmin -$minutes -print -quit &>/dev/null
     if [ $? = 0 ]; then
         echo "INFO: Reference repository was updated less than $minutes minutes ago." >&2
         echo "INFO: Path: $repo_path" >&2
