@@ -56,8 +56,12 @@ if [ $minutes -gt 0 ]; then
     else
         search_path="$repo_path/.git"
     fi
-    find "$search_path"/{FETCH_HEAD,packed-refs,objects} -mmin -$minutes -print -quit &>/dev/null
-    if [ $? = 0 ]; then
+    matches=$(find "$search_path"/{FETCH_HEAD,packed-refs,objects} -mmin -$minutes -print -quit 2>/dev/null)
+    status=$?
+    if [ $status != 0 ]; then
+        fail "ERROR: find '$search_path/...' exited with status $status"
+    fi
+    if [ -n "$matches" ]; then
         echo "INFO: Reference repository was updated less than $minutes minutes ago." >&2
         echo "INFO: Path: $repo_path" >&2
         exit 0
