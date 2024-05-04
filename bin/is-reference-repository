@@ -1,2 +1,4 @@
 #!/usr/bin/env bash
-test -s .git/objects/info/alternates
+# exit 10 if it is a reference repo, otherwise 11
+test -s .git/objects/info/alternates && exit 10
+exit 11
